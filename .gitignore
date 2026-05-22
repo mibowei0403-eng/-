@@ -1,0 +1,8 @@
+server-start.*.log
+*.tmp
+*.temp
+*.bak
+business-dashboard-data.before-*.json
+dist/
+release/
+node_modules/

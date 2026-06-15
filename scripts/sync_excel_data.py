@@ -340,6 +340,33 @@ def apply_idle_devices_from_rental(data):
             device["rent"] = row["rent"]
 
 
+def apply_current_rental_device_statuses(data):
+    devices = data.setdefault("devices", [])
+    by_code = {device.get("code"): device for device in devices}
+    for order in data.get("rentalOrders", []):
+        if order.get("status") != "租赁中" or text(order.get("customer")) == "张欣":
+            continue
+        code = text(order.get("deviceCode"))
+        if not code:
+            continue
+        device = by_code.get(code)
+        if not device:
+            device = {
+                "id": code,
+                "code": code,
+                "brandModel": "台式机",
+                "spec": text(order.get("model")),
+                "cost": number(order.get("cost")),
+                "bookCost": number(order.get("cost")),
+            }
+            devices.append(device)
+            by_code[code] = device
+        device["status"] = "在租"
+        device["currentCustomer"] = text(order.get("customer"))
+        if number(order.get("monthlyRent")):
+            device["rent"] = number(order.get("monthlyRent"))
+
+
 def main():
     data = json.loads(DATA_FILE.read_text(encoding="utf-8"))
     backup = DATA_FILE.with_name(f"business-dashboard-data.before-excel-sync-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json")
@@ -364,6 +391,7 @@ def main():
     }
     apply_bad_debt_rules(data)
     apply_idle_devices_from_rental(data)
+    apply_current_rental_device_statuses(data)
 
     DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({

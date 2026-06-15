@@ -10,7 +10,7 @@
     "note": "Imported from Excel and preserved customers, bad debts, managed devices and manual non-Excel money records.",
     "cloudMergedAt": "2026-06-08T02:38:14.845Z",
     "cloudBackupSource": "cloud-current-data-before-update-20260608-103659.json",
-    "syncedAt": "2026-06-15T13:53:31",
+    "syncedAt": "2026-06-15T15:03:32",
     "rentalSyncedAt": "2026-06-15T14:51:48"
   },
   "devices": [
@@ -21,13 +21,14 @@
       "spec": "CPU：R5-5600 主板：华硕B550M-PLUS 内存：英睿达16g 3200（8*2） 硬盘：西部数据SN750 500G 显卡:华硕 RX6600 8g 散热器：玄冰400 电源：先马全模组 500W 机箱：乔斯伯U4 PLUS",
       "cost": 4738,
       "bookCost": 4738,
-      "status": "买断",
+      "status": "在租",
       "depositFree": "否",
-      "rent": 250,
+      "rent": 350,
       "rentedMonths": 2,
-      "collected": 5066,
+      "collected": 350,
       "paybackProgress": "106.92%",
-      "paidBack": "是"
+      "paidBack": "是",
+      "currentCustomer": "于海洋"
     },
     {
       "id": "AW-2025002",
@@ -38,11 +39,12 @@
       "bookCost": 2314.13,
       "status": "在租",
       "depositFree": "否",
-      "rent": 200,
+      "rent": 650,
       "rentedMonths": 9,
-      "collected": 3049,
+      "collected": 650,
       "paybackProgress": "131.76%",
-      "paidBack": "是"
+      "paidBack": "是",
+      "currentCustomer": "张丛山"
     },
     {
       "id": "AW-2025003",
@@ -55,9 +57,10 @@
       "depositFree": "否",
       "rent": 499,
       "rentedMonths": 9,
-      "collected": 6273,
+      "collected": 6772,
       "paybackProgress": "104.57%",
-      "paidBack": "是"
+      "paidBack": "是",
+      "currentCustomer": "王胜博"
     },
     {
       "id": "AW-2025004",
@@ -70,9 +73,10 @@
       "depositFree": "否",
       "rent": 400,
       "rentedMonths": 9,
-      "collected": 4800,
+      "collected": 5200,
       "paybackProgress": "96.94%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "杨智雯"
     },
     {
       "id": "AW-2025005",
@@ -81,13 +85,14 @@
       "spec": "CPU：12400f 主板：华硕prime B660M-K D4 内存：金百达16g 3200(8g*2) 硬盘：三星980pro 500g 显卡:华硕RTX4060 散热器：利民AX120E SE 电源：玄武500K 机箱：小吉优品",
       "cost": 3717,
       "bookCost": 3717,
-      "status": "空置",
+      "status": "在租",
       "depositFree": "否",
-      "rent": 350,
+      "rent": 400,
       "rentedMonths": 8,
       "collected": 3875,
       "paybackProgress": "104.25%",
-      "paidBack": "是"
+      "paidBack": "是",
+      "currentCustomer": "于海洋"
     },
     {
       "id": "AW-2025006",
@@ -130,9 +135,10 @@
       "depositFree": "否",
       "rent": 350,
       "rentedMonths": 6,
-      "collected": 3950,
+      "collected": 1750,
       "paybackProgress": "116.57%",
-      "paidBack": "是"
+      "paidBack": "是",
+      "currentCustomer": "王可欣"
     },
     {
       "id": "AW-2025009",
@@ -145,9 +151,10 @@
       "depositFree": "否",
       "rent": 250,
       "rentedMonths": 8,
-      "collected": 2830,
+      "collected": 2750,
       "paybackProgress": "85.11%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "常成"
     },
     {
       "id": "AW-2025010",
@@ -188,11 +195,12 @@
       "bookCost": 5199,
       "status": "在租",
       "depositFree": "否",
-      "rent": 550,
+      "rent": 700,
       "rentedMonths": 5,
-      "collected": 4300,
+      "collected": 700,
       "paybackProgress": "82.71%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "韩子溪"
     },
     {
       "id": "AW-2025013",
@@ -205,9 +213,10 @@
       "depositFree": "否",
       "rent": 300,
       "rentedMonths": 8,
-      "collected": 3600,
+      "collected": 3900,
       "paybackProgress": "106.45%",
-      "paidBack": "是"
+      "paidBack": "是",
+      "currentCustomer": "金亚雪"
     },
     {
       "id": "AW-2025014",
@@ -218,11 +227,12 @@
       "bookCost": 2359.84,
       "status": "在租",
       "depositFree": "否",
-      "rent": 260,
+      "rent": 250,
       "rentedMonths": 5,
-      "collected": 2080,
+      "collected": 2330,
       "paybackProgress": "88.14%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "高佳辉"
     },
     {
       "id": "AW-2025015",
@@ -233,11 +243,12 @@
       "bookCost": 3936.76,
       "status": "在租",
       "depositFree": "否",
-      "rent": 500,
+      "rent": 400,
       "rentedMonths": 6,
-      "collected": 3470,
+      "collected": 1600,
       "paybackProgress": "88.14%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "于海洋"
     },
     {
       "id": "AW-2025016",
@@ -266,9 +277,10 @@
       "depositFree": "否",
       "rent": 200,
       "rentedMonths": 5,
-      "collected": 1460,
+      "collected": 1200,
       "paybackProgress": "106.72%",
-      "paidBack": "是"
+      "paidBack": "是",
+      "currentCustomer": "高佳辉"
     },
     {
       "id": "AW-2025018",
@@ -279,11 +291,12 @@
       "bookCost": 2361.47,
       "status": "在租",
       "depositFree": "否",
-      "rent": 250,
+      "rent": 300,
       "rentedMonths": 5,
-      "collected": 1946,
+      "collected": 700,
       "paybackProgress": "82.41%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "董晓玲"
     },
     {
       "id": "AW-2025019",
@@ -294,11 +307,12 @@
       "bookCost": 4879.32,
       "status": "在租",
       "depositFree": "是",
-      "rent": 500,
+      "rent": 450,
       "rentedMonths": 7,
-      "collected": 4800,
+      "collected": 1350,
       "paybackProgress": "98.37%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "王佳鑫"
     },
     {
       "id": "AW-2025020",
@@ -309,11 +323,12 @@
       "bookCost": 4707.52,
       "status": "在租",
       "depositFree": "是",
-      "rent": 430,
+      "rent": 500,
       "rentedMonths": 6,
-      "collected": 4570,
+      "collected": 2350,
       "paybackProgress": "97.08%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "于洋"
     },
     {
       "id": "AW-2025021",
@@ -337,14 +352,14 @@
       "spec": "CPU：I7-12700KF 主板：华硕Z690 PRIME 内存：英睿达 铂胜 16g 4200*2 显卡:RX 6600 硬盘：英睿达 P3P m2 PCIE 4.0 散热器：利民AE360 水冷 电源：海韵 focus 850W 机箱：金河田 99A +4把风扇",
       "cost": 3900,
       "bookCost": 3900,
-      "status": "空置",
+      "status": "在租",
       "depositFree": "是",
       "rent": 450,
       "rentedMonths": 2,
-      "collected": 900,
+      "collected": 450,
       "paybackProgress": "26.54%",
       "paidBack": "否",
-      "currentCustomer": ""
+      "currentCustomer": "罗国强"
     },
     {
       "id": "AW-2025023",
@@ -372,9 +387,10 @@
       "depositFree": "否",
       "rent": 350,
       "rentedMonths": 6,
-      "collected": 3360,
+      "collected": 1750,
       "paybackProgress": "87.80%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "于智勇"
     },
     {
       "id": "AW-2025025",
@@ -401,11 +417,12 @@
       "bookCost": 6225,
       "status": "在租",
       "depositFree": "否",
-      "rent": 500,
+      "rent": 550,
       "rentedMonths": 5,
-      "collected": 4325,
+      "collected": 1650,
       "paybackProgress": "69.48%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "李庆"
     },
     {
       "id": "苹果电脑",
@@ -418,9 +435,10 @@
       "depositFree": "否",
       "rent": 400,
       "rentedMonths": 3,
-      "collected": 2470,
+      "collected": 1600,
       "paybackProgress": "88.21%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "罗国强"
     },
     {
       "id": "笔记本电脑",
@@ -431,11 +449,12 @@
       "bookCost": 583.333333333333,
       "status": "在租",
       "depositFree": "是",
-      "rent": 350,
+      "rent": 550,
       "rentedMonths": 7,
-      "collected": 3559.27,
+      "collected": 550,
       "paybackProgress": "50.85%",
-      "paidBack": "否"
+      "paidBack": "否",
+      "currentCustomer": "李中煜"
     },
     {
       "id": "AW-2025027",
@@ -1136,6 +1155,18 @@
       "paybackProgress": "",
       "paidBack": "",
       "currentCustomer": "张欣"
+    },
+    {
+      "id": "AW-2025021\n白色",
+      "code": "AW-2025021\n白色",
+      "brandModel": "台式机",
+      "spec": "CPU：I5-12600KF 主板：微星MAG B660M MORTAR MAX WIFI D4 内存：威刚 16g （8g3600*2) 显卡:华硕tuf 3060ti 8g 硬盘：西数 SN770 1T 散热器：航嘉240水冷 电源：鑫谷 650W 全模组 机箱：玩嘉孤勇者",
+      "cost": 3800,
+      "bookCost": 3800,
+      "status": "在租",
+      "currentCustomer": "李洋龙",
+      "rent": 350,
+      "collected": 4075
     }
   ],
   "rentalOrders": [

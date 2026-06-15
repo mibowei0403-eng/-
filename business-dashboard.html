@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>电脑租赁经营系统</title>
+    <link rel="stylesheet" href="business-dashboard.css?v=20260615-cashflow-plan" />
+  </head>
+  <body>
+    <main class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">租</div>
+          <div>
+            <strong>经营系统</strong>
+            <span>移动硬盘独立版</span>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-button active" data-view="overview" data-title="经营总览" data-eyebrow="现金流 / 收租提醒 / 资产风险" type="button">经营总览</button>
+          <button class="nav-button" data-view="rentLedger" data-title="在租与收租台账" data-eyebrow="今日应收 / 逾期未收 / 批量跟进" type="button">在租/收租</button>
+          <button class="nav-button" data-view="history" data-title="历史订单" data-eyebrow="已归还 / 已结束 / 历史租赁记录" type="button">历史订单</button>
+          <button class="nav-button" data-view="buyout" data-title="买断订单" data-eyebrow="买断设备 / 已收金额 / 回本情况" type="button">买断订单</button>
+          <button class="nav-button" data-view="devices" data-title="设备回本" data-eyebrow="采购成本 / 累计已收 / 空置资产" type="button">设备回本</button>
+          <button class="nav-button" data-view="finance" data-title="财务流水" data-eyebrow="收入支出 / 贷款月供 / 现金流缺口" type="button">财务流水</button>
+          <button class="nav-button" data-view="badDebt" data-title="坏单管理" data-eyebrow="案件档案 / 回款进度 / 下一步动作" type="button">坏单管理</button>
+        </nav>
+        <section class="side-card">
+          <span class="label">数据位置</span>
+          <strong id="storageStatus">读取中...</strong>
+          <p>整个文件夹复制到移动硬盘后，数据会跟随这个文件夹走。</p>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="pageEyebrow">现金流 / 收租提醒 / 资产风险</p>
+            <h1 id="pageTitle">经营总览</h1>
+          </div>
+          <div class="top-actions">
+            <button class="primary-button" id="openRentalModal" type="button">新增租约</button>
+            <button class="ghost-button" id="reloadData" type="button">重新读取</button>
+            <button class="primary-button" id="exportData" type="button">导出备份</button>
+          </div>
+        </header>
+
+        <section class="view active" id="overviewView">
+          <div class="metric-grid">
+            <article class="metric-card"><span>设备总数</span><strong id="deviceTotal">0</strong><p id="deviceStatusText">-</p></article>
+            <article class="metric-card"><span>当前在租</span><strong id="rentedTotal">0</strong><p id="rentedRentText">-</p></article>
+            <article class="metric-card"><span>历史订单</span><strong id="historyTotal">0</strong><p>已归还和已结束记录</p></article>
+            <article class="metric-card"><span>买断设备</span><strong id="buyoutTotal">0</strong><p>设备状态或订单状态为买断</p></article>
+            <article class="metric-card"><span>已回本设备</span><strong id="paidBackTotal">0</strong><p id="paybackText">-</p></article>
+            <article class="metric-card warning"><span>异常设备</span><strong id="riskTotal">0</strong><p>丢失、空置或未结算</p></article>
+          </div>
+
+          <section class="panel command-panel">
+            <div class="panel-head">
+              <div>
+                <h2>经营驾驶舱</h2>
+                <p>围绕现金流、资产效率和客户风险，给出今天最该看的经营判断。</p>
+              </div>
+            </div>
+            <div class="metric-grid command-metrics">
+              <article class="metric-card"><span>本月租金已收</span><strong id="commandMonthRentPaid">¥0</strong><p id="commandMonthRentText">-</p></article>
+              <article class="metric-card warning"><span>本月剩余未收</span><strong id="commandMonthRentUnpaid">¥0</strong><p id="commandUnpaidText">-</p></article>
+              <article class="metric-card"><span>未来30天应收</span><strong id="commandNext30Rent">¥0</strong><p id="commandNext30Text">-</p></article>
+              <article class="metric-card warning"><span>当月现金净流</span><strong id="commandMonthNet">¥0</strong><p id="commandMonthNetText">-</p></article>
+            </div>
+            <div class="split-grid command-grid">
+              <section class="sub-panel">
+                <h3>CEO判断</h3>
+                <div class="insight-list" id="ceoDecisionList"></div>
+              </section>
+              <section class="sub-panel">
+                <h3>风险客户</h3>
+                <div class="ranking" id="customerRiskList"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="panel reminder-panel">
+            <div class="panel-head">
+              <div>
+                <h2>收租提醒</h2>
+                <p>根据合同签订日期自动计算每月收租日，提前一天提醒。</p>
+              </div>
+            </div>
+            <div class="reminder-list" id="rentReminderList"></div>
+          </section>
+
+          <div class="split-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>经营提醒</h2>
+                  <p>根据真实 Excel 数据自动生成。</p>
+                </div>
+              </div>
+              <div class="insight-list" id="insightList"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>客户月租排名</h2>
+                  <p>只统计当前租赁中的订单。</p>
+                </div>
+              </div>
+              <div class="ranking" id="customerRanking"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="rentedView">
+          <section class="panel">
+            <div class="panel-head">
+              <div><h2>现在有在租的配置</h2><p>来自租赁统计表中“租赁中”的订单，并关联设备主表。</p></div>
+              <input class="search" id="rentedSearch" placeholder="搜索设备编号、客户、配置" />
+            </div>
+            <div class="rented-list" id="rentedTable"></div>
+          </section>
+        </section>
+
+        <section class="view" id="rentLedgerView">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>收租台账</h2>
+                <p>这里和在租配置使用同一套数据，只是默认聚焦每台设备本期租金是否已收。</p>
+              </div>
+              <input class="search" id="rentLedgerSearch" placeholder="搜索设备编号、客户、状态" />
+            </div>
+            <div class="metric-grid rent-ledger-metrics">
+              <article class="metric-card"><span>目前在租</span><strong id="rentingDeviceCount">0</strong><p id="rentingRentAmount">-</p></article>
+              <article class="metric-card"><span>空置设备</span><strong id="idleDeviceCount">0</strong><p id="idleDeviceCost">-</p></article>
+              <article class="metric-card"><span>本月已收</span><strong id="rentPaidAmountMain">¥0</strong><p id="rentPaidCountText">-</p></article>
+              <article class="metric-card warning"><span>剩余未收</span><strong id="rentUnpaidAmountMain">¥0</strong><p id="rentUnpaidCountText">-</p></article>
+            </div>
+            <div class="segmented-control" id="rentLedgerFilter">
+              <button class="active" type="button" data-rent-filter="all">全部</button>
+              <button type="button" data-rent-filter="rented">在租</button>
+              <button type="button" data-rent-filter="idle">空置</button>
+              <button type="button" data-rent-filter="overdue">逾期未收</button>
+              <button type="button" data-rent-filter="paid">本月已收</button>
+              <button type="button" data-rent-filter="unpaid">剩余未收</button>
+            </div>
+            <div class="rented-list" id="rentLedgerTable"></div>
+          </section>
+        </section>
+
+        <section class="view" id="historyView">
+          <section class="panel">
+            <div class="panel-head">
+              <div><h2>历史订单</h2><p>已归还、已结束和历史租赁记录。</p></div>
+              <input class="search" id="historySearch" placeholder="搜索客户、设备编号、备注" />
+            </div>
+            <div class="table-wrap"><table><thead><tr><th>设备</th><th>客户</th><th>状态</th><th>租赁日期</th><th>归还日期</th><th>月租</th><th>已收</th><th>备注</th></tr></thead><tbody id="historyTable"></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="view" id="buyoutView">
+          <section class="panel">
+            <div class="panel-head">
+              <div><h2>买断订单</h2><p>设备主表“买断”和租赁统计表“已买断”的记录。</p></div>
+            </div>
+            <div class="table-wrap"><table><thead><tr><th>设备</th><th>客户/来源</th><th>成本</th><th>已收</th><th>回本</th><th>配置</th></tr></thead><tbody id="buyoutTable"></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="view" id="devicesView">
+          <section class="panel">
+            <div class="panel-head">
+              <div><h2>设备回本</h2><p>来自 001设备主表，可快速查看每台设备是否回本。</p></div>
+              <div class="top-actions">
+                <input class="search" id="deviceSearch" placeholder="搜索设备编号、状态、配置" />
+                <button class="primary-button" id="openDeviceModal" type="button">新增空置设备</button>
+              </div>
+            </div>
+            <div class="table-wrap"><table><thead><tr><th>设备编号</th><th>状态</th><th>成本</th><th>月租</th><th>已出租月数</th><th>累计已收</th><th>回本进度</th><th>是否回本</th><th>配置</th></tr></thead><tbody id="deviceTable"></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="view" id="financeView">
+          <section class="panel finance-actions-panel">
+            <div class="panel-head">
+              <div>
+                <h2>财务操作</h2>
+                <p>新增租金收入、进货支出或其他经营流水，保存后写入数据文件。</p>
+              </div>
+              <div class="top-actions">
+                <button class="primary-button" id="openIncomeModal" type="button">新增收入</button>
+                <button class="ghost-button" id="openExpenseModal" type="button">新增支出</button>
+              </div>
+            </div>
+          </section>
+          <div class="metric-grid finance-metrics">
+            <article class="metric-card"><span>收入合计</span><strong id="incomeTotal">¥0</strong><p id="incomeCount">-</p></article>
+            <article class="metric-card"><span>支出合计</span><strong id="expenseTotal">¥0</strong><p id="expenseCount">-</p></article>
+            <article class="metric-card"><span>账面净额</span><strong id="netTotal">¥0</strong><p>收入 - 支出</p></article>
+            <article class="metric-card"><span>剩余本金</span><strong id="loanRemainTotal">¥0</strong><p id="loanCount">-</p></article>
+          </div>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>财务状况总览</h2>
+                <p>把总投资、总贷款、现金流和还款压力放在同一张表里看。</p>
+              </div>
+            </div>
+            <div class="metric-grid finance-position-metrics">
+              <article class="metric-card"><span>总投资</span><strong id="financeInvestmentTotal">¥0</strong><p id="financeInvestmentText">-</p></article>
+              <article class="metric-card"><span>总贷款本金</span><strong id="financeLoanPrincipal">¥0</strong><p id="financeLoanRemainText">-</p></article>
+              <article class="metric-card warning"><span>每月还款压力</span><strong id="financeMonthlyPayment">¥0</strong><p id="financePayoffText">-</p></article>
+              <article class="metric-card warning"><span>月现金流缺口</span><strong id="financeMonthlyGap">¥0</strong><p id="financeCoverageText">-</p></article>
+            </div>
+            <section class="cashflow-panel">
+              <div class="panel-head compact-head">
+                <div>
+                  <h3>月度现金流计划</h3>
+                  <p>按当前在租月租和未还贷款月供，判断每个月还完贷款后的结余或缺口。</p>
+                </div>
+              </div>
+              <div class="metric-grid cashflow-metrics">
+                <article class="metric-card"><span>本月应收租金</span><strong id="cashflowMonthRent">¥0</strong><p id="cashflowMonthRentText">-</p></article>
+                <article class="metric-card warning"><span>本月应还贷款</span><strong id="cashflowMonthLoan">¥0</strong><p id="cashflowMonthLoanText">-</p></article>
+                <article class="metric-card"><span>收完后结余/缺口</span><strong id="cashflowFullBalance">¥0</strong><p>本月租金全部收齐后</p></article>
+                <article class="metric-card warning"><span>当前已收后结余/缺口</span><strong id="cashflowPaidBalance">¥0</strong><p id="cashflowPaidBalanceText">-</p></article>
+              </div>
+              <div class="table-wrap compact-table monthly-cashflow-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>月份</th>
+                      <th>预计租金</th>
+                      <th>已收租金</th>
+                      <th>剩余待收</th>
+                      <th>应还贷款</th>
+                      <th>还后结余/缺口</th>
+                      <th>还后剩余本金</th>
+                      <th>判断</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monthlyCashflowTable"></tbody>
+                </table>
+              </div>
+            </section>
+            <div class="split-grid finance-health-grid">
+              <section class="sub-panel">
+                <h3>还款能力判断</h3>
+                <div class="insight-list" id="financeHealthList"></div>
+              </section>
+              <section class="sub-panel">
+                <h3>未还贷款明细</h3>
+                <div class="table-wrap compact-table"><table><thead><tr><th>名称</th><th>剩余本金</th><th>每月应还</th><th>剩余期数</th><th>已还/总期</th><th>预计还清</th><th>操作</th></tr></thead><tbody id="loanHealthTable"></tbody></table></div>
+              </section>
+            </div>
+          </section>
+          <div class="split-grid">
+            <section class="panel">
+              <div class="panel-head"><div><h2>收入明细</h2><p>来自财务收入支出表。</p></div></div>
+              <div class="table-wrap"><table><thead><tr><th>日期</th><th>类别</th><th>金额</th><th>客户</th><th>摘要</th></tr></thead><tbody id="incomeTable"></tbody></table></div>
+              <div class="pagination" id="incomePagination"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><h2>支出明细</h2><p>来自财务收入支出表。</p></div></div>
+              <div class="table-wrap"><table><thead><tr><th>日期</th><th>类别</th><th>金额</th><th>摘要</th></tr></thead><tbody id="expenseTable"></tbody></table></div>
+              <div class="pagination" id="expensePagination"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="badDebtView">
+          <section class="panel bad-debt-hero">
+            <div class="panel-head">
+              <div>
+                <h2>张欣坏单管理</h2>
+                <p>单独管理诉讼、回款、设备敞口和下一步动作，避免混在普通租赁订单里。</p>
+              </div>
+              <span class="chip danger" id="badDebtStatusChip">坏单</span>
+            </div>
+            <div class="metric-grid bad-debt-metrics">
+              <article class="metric-card warning"><span>合同金额</span><strong id="badDebtContract">¥0</strong><p>对外主张金额</p></article>
+              <article class="metric-card"><span>设备成本</span><strong id="badDebtCost">¥0</strong><p>实际投入成本</p></article>
+              <article class="metric-card"><span>已收金额</span><strong id="badDebtCollected">¥0</strong><p>已到账现金</p></article>
+              <article class="metric-card warning"><span>未收敞口</span><strong id="badDebtExposure">¥0</strong><p>合同金额 - 已收</p></article>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>金额拆分</h2>
+                <p>按配置类型拆开看合同金额，方便和证据、合同、起诉材料逐项核对。</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>配置</th>
+                    <th>数量</th>
+                    <th>月租金</th>
+                    <th>买断金额</th>
+                    <th>12月合计租金</th>
+                    <th>买断总额</th>
+                    <th>合计金额</th>
+                  </tr>
+                </thead>
+                <tbody id="badDebtBreakdown"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="split-grid bad-debt-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>案件档案</h2>
+                  <p>这里记录坏单的关键金额、诉讼状态和下一步动作。</p>
+                </div>
+              </div>
+              <form id="badDebtForm" class="form-grid bad-debt-form">
+                <input type="hidden" name="id" />
+                <label>客户名称<input name="customer" required /></label>
+                <label>关联租约<input name="rentalOrderId" readonly /></label>
+                <label>合同金额<input name="contractAmount" type="number" /></label>
+                <label>设备成本<input name="costAmount" type="number" /></label>
+                <label>已收金额<input name="collectedAmount" type="number" /></label>
+                <label>案件状态
+                  <select name="caseStatus">
+                    <option value="已起诉">已起诉</option>
+                    <option value="协商中">协商中</option>
+                    <option value="执行中">执行中</option>
+                    <option value="已结案">已结案</option>
+                  </select>
+                </label>
+                <label>起诉日期<input name="caseDate" /></label>
+                <label>下一步截止日<input name="nextDeadline" /></label>
+                <label class="full">下一步动作<input name="nextAction" placeholder="例如：补充证据、联系法院、申请财产保全" /></label>
+                <label class="full">备注<textarea name="note" rows="4" placeholder="记录聊天证据、法院进展、承诺还款时间等"></textarea></label>
+                <button class="primary-button full-button" type="submit">保存坏单档案</button>
+              </form>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>关联订单</h2>
+                  <p>张欣名下的租赁记录和设备信息。</p>
+                </div>
+              </div>
+              <div class="bad-debt-summary" id="badDebtLinkedOrders"></div>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <dialog class="modal" id="rentalModal">
+      <form method="dialog" class="modal-card" id="rentalForm">
+        <div class="modal-head">
+          <h2 id="rentalModalTitle">新增租约</h2>
+          <button class="icon-button" value="cancel" type="button" data-close-dialog>×</button>
+        </div>
+        <input type="hidden" name="id" />
+        <div class="form-grid">
+          <label>设备编号<input name="deviceCode" required placeholder="AW-2025002" /></label>
+          <label>客户名称<input name="customer" required /></label>
+          <label>联系方式<input name="phone" /></label>
+          <label>月租金<input name="monthlyRent" type="number" required /></label>
+          <label>当前已收<input name="collected" type="number" required /></label>
+          <label>预租期（月）<input name="expectedMonths" type="number" /></label>
+          <label>合同签订日期<input name="contractDate" /></label>
+          <label>租赁日期<input name="startDate" /></label>
+          <label>归还日期<input name="returnDate" /></label>
+          <label>状态
+            <select name="status">
+              <option value="租赁中">租赁中</option>
+              <option value="已归还">已归还</option>
+              <option value="已买断">已买断</option>
+              <option value="坏单">坏单</option>
+            </select>
+          </label>
+          <label>身份证号<input name="idCard" /></label>
+          <label>CPU<input name="compCpu" /></label>
+          <label>主板<input name="compMotherboard" /></label>
+          <label>内存<input name="compMemory" /></label>
+          <label>硬盘<input name="compStorage" /></label>
+          <label>显卡<input name="compGpu" /></label>
+          <label>散热器<input name="compCooler" /></label>
+          <label>电源<input name="compPsu" /></label>
+          <label>机箱<input name="compCase" /></label>
+          <label class="full">其他配置/原始配置<input name="model" placeholder="可留空，或填写额外说明" /></label>
+          <label class="full">配件/备注<input name="note" /></label>
+        </div>
+        <button class="primary-button full-button" type="submit">保存租约</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="deviceModal">
+      <form method="dialog" class="modal-card" id="deviceForm">
+        <div class="modal-head">
+          <h2 id="deviceModalTitle">编辑设备</h2>
+          <button class="icon-button" value="cancel" type="button" data-close-dialog>×</button>
+        </div>
+        <input type="hidden" name="code" />
+        <div class="form-grid">
+          <label>设备编号<input name="codeDisplay" required placeholder="AW-2025071" /></label>
+          <label>设备状态
+            <select name="status">
+              <option value="在租">在租</option>
+              <option value="空置">空置</option>
+              <option value="买断">买断</option>
+              <option value="丢失">丢失</option>
+              <option value="维修">维修</option>
+              <option value="坏单">坏单</option>
+            </select>
+          </label>
+          <label>采购成本<input name="cost" type="number" /></label>
+          <label>当前月租<input name="rent" type="number" /></label>
+          <label>累计已收租金<input name="collected" type="number" /></label>
+          <label>已出租月数<input name="rentedMonths" type="number" step="0.1" /></label>
+          <label>是否免押
+            <select name="depositFree">
+              <option value="否">否</option>
+              <option value="是">是</option>
+            </select>
+          </label>
+          <label>是否已回本
+            <select name="paidBack">
+              <option value="否">否</option>
+              <option value="是">是</option>
+            </select>
+          </label>
+          <label>CPU<input name="compCpu" /></label>
+          <label>主板<input name="compMotherboard" /></label>
+          <label>内存<input name="compMemory" /></label>
+          <label>硬盘<input name="compStorage" /></label>
+          <label>显卡<input name="compGpu" /></label>
+          <label>散热器<input name="compCooler" /></label>
+          <label>电源<input name="compPsu" /></label>
+          <label>机箱<input name="compCase" /></label>
+          <label class="full">其他配置/原始配置<input name="spec" /></label>
+        </div>
+        <button class="primary-button full-button" type="submit">保存设备</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="returnModal">
+      <form method="dialog" class="modal-card" id="returnForm">
+        <div class="modal-head">
+          <h2>办理退租</h2>
+          <button class="icon-button" value="cancel" type="button" data-close-dialog>×</button>
+        </div>
+        <input type="hidden" name="id" />
+        <div class="form-grid">
+          <label>设备编号<input name="deviceCode" readonly /></label>
+          <label>客户名称<input name="customer" readonly /></label>
+          <label>最终实收租金<input name="collected" type="number" required /></label>
+          <label>实际归还日期<input name="returnDate" required /></label>
+          <label class="full">验机/配件备注<input name="returnNote" placeholder="例如：主机正常，电源线已归还，键鼠缺失等" /></label>
+        </div>
+        <button class="primary-button full-button" type="submit">确认退租并设为空置</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="financeModal">
+      <form method="dialog" class="modal-card" id="financeForm">
+        <div class="modal-head">
+          <h2 id="financeModalTitle">新增流水</h2>
+          <button class="icon-button" value="cancel" type="button" data-close-dialog>×</button>
+        </div>
+        <input type="hidden" name="type" />
+        <div class="form-grid">
+          <label>发生日期<input name="date" required /></label>
+          <label>类别<input name="category" required placeholder="租赁 / 进货 / 维修 / 利息" /></label>
+          <label>金额<input name="amount" type="number" required /></label>
+          <label>账号<input name="account" placeholder="0978 / 6525 / 支付宝" /></label>
+          <label>客户名称<input name="customer" placeholder="收入可填" /></label>
+          <label>设备编号<input name="deviceCode" placeholder="如 AW-2025002，可选" /></label>
+          <label class="full">摘要<input name="summary" required placeholder="例如：AW-2025002 王馨瑶 6月租金 / 采购 4060 显卡" /></label>
+        </div>
+        <button class="primary-button full-button" type="submit">保存流水</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="customerModal">
+      <form method="dialog" class="modal-card" id="customerForm">
+        <div class="modal-head">
+          <h2>客户资料</h2>
+          <button class="icon-button" value="cancel" type="button" data-close-dialog>×</button>
+        </div>
+        <input type="hidden" name="originalName" />
+        <input type="hidden" name="idFrontData" />
+        <input type="hidden" name="idBackData" />
+        <div class="form-grid">
+          <label>客户名称<input name="name" required /></label>
+          <label>电话号<input name="phone" /></label>
+          <label>身份证号<input name="idCard" /></label>
+          <label>关联设备<input name="deviceCode" disabled /></label>
+          <label class="full">地址<input name="address" placeholder="客户现住址/收货地址" /></label>
+          <label>身份证正面<input name="idFront" type="file" accept="image/*" /></label>
+          <label>身份证反面<input name="idBack" type="file" accept="image/*" /></label>
+        </div>
+        <div class="customer-images">
+          <figure>
+            <figcaption>身份证正面</figcaption>
+            <img id="idFrontPreview" alt="身份证正面预览" />
+          </figure>
+          <figure>
+            <figcaption>身份证反面</figcaption>
+            <img id="idBackPreview" alt="身份证反面预览" />
+          </figure>
+        </div>
+        <button class="primary-button full-button" type="submit">保存客户资料</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="collectRentModal">
+      <form method="dialog" class="modal-card" id="collectRentForm">
+        <div class="modal-head">
+          <h2>收租/续租</h2>
+          <button class="icon-button" value="cancel" type="button" data-close-dialog>×</button>
+        </div>
+        <input type="hidden" name="id" />
+        <div class="form-grid">
+          <label>设备编号<input name="deviceCode" readonly /></label>
+          <label>客户名称<input name="customer" readonly /></label>
+          <label>收款日期<input name="date" required /></label>
+          <label>本次收款金额<input name="amount" type="number" required /></label>
+          <label>收款账号<input name="account" placeholder="0978 / 支付宝 / 微信" /></label>
+          <label>续租月数<input name="renewMonths" type="number" value="1" /></label>
+          <label class="full">摘要<input name="summary" /></label>
+        </div>
+        <button class="primary-button full-button" type="submit">确认收款并同步流水</button>
+      </form>
+    </dialog>
+
+    <script src="business-dashboard.js?v=20260615-cashflow-plan"></script>
+  </body>
+</html>

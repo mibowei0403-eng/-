@@ -1,0 +1,10 @@
+电脑租赁经营系统使用说明
+
+1. 双击“启动经营系统.bat”
+2. 浏览器会自动打开经营系统
+3. 数据保存在同文件夹的 business-dashboard-data.json
+4. 整个 rental-business-system 文件夹可以复制到移动硬盘
+5. 换电脑使用时，仍然双击“启动经营系统.bat”
+
+注意：
+如果提示未检测到 Node.js，需要先安装 Node.js。

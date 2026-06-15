@@ -1,4 +1,5 @@
 server-start.*.log
+.DS_Store
 *.tmp
 *.temp
 *.bak

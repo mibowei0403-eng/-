@@ -103,6 +103,8 @@ def parse_rental_orders():
             continue
         if clean(row[0]) == "" and clean(row[1]) == "" and clean(row[2]) == "":
             continue
+        if text(row[11]) == "空置" and text(row[12]) == "" and date_text(row[5]) == "":
+            continue
         orders.append(rental_order_from_row(row, excel_row, f"rent-{excel_row}"))
 
     if "张欣" in wb.sheetnames:
@@ -118,6 +120,37 @@ def parse_rental_orders():
             orders.append(order)
 
     return orders
+
+
+def parse_idle_devices_from_rental():
+    wb = load_workbook(RENTAL_FILE, data_only=True, read_only=True)
+    ws = wb["统计总表"]
+    devices = []
+    for excel_row, row in enumerate(ws.iter_rows(values_only=True), start=1):
+        if excel_row <= 2:
+            continue
+        if text(row[11]) != "空置" or text(row[12]) or date_text(row[5]):
+            continue
+        code = text(row[1])
+        if not code:
+            continue
+        devices.append({
+            "id": code,
+            "code": code,
+            "brandModel": "台式机",
+            "spec": normalize_spec(row[2]),
+            "cost": number(row[3]),
+            "bookCost": number(row[3]),
+            "status": "空置",
+            "depositFree": "",
+            "rent": number(row[8]),
+            "rentedMonths": "",
+            "collected": number(row[10]),
+            "paybackProgress": "",
+            "paidBack": "否",
+            "currentCustomer": "",
+        })
+    return devices
 
 
 def parse_income():
@@ -285,6 +318,28 @@ def apply_bad_debt_rules(data):
         chen["relatedRentalOrderIds"] = chen_ids
 
 
+def apply_idle_devices_from_rental(data):
+    idle_rows = parse_idle_devices_from_rental()
+    devices = data.setdefault("devices", [])
+    by_code = {device.get("code"): device for device in devices}
+    for row in idle_rows:
+        device = by_code.get(row["code"])
+        if not device:
+            device = row.copy()
+            devices.append(device)
+            by_code[row["code"]] = device
+            continue
+        device["status"] = "空置"
+        device["currentCustomer"] = ""
+        if row.get("spec"):
+            device["spec"] = row["spec"]
+        if number(row.get("cost")):
+            device["cost"] = row["cost"]
+            device["bookCost"] = row["bookCost"]
+        if number(row.get("rent")):
+            device["rent"] = row["rent"]
+
+
 def main():
     data = json.loads(DATA_FILE.read_text(encoding="utf-8"))
     backup = DATA_FILE.with_name(f"business-dashboard-data.before-excel-sync-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json")
@@ -308,6 +363,7 @@ def main():
         },
     }
     apply_bad_debt_rules(data)
+    apply_idle_devices_from_rental(data)
 
     DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({

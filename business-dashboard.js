@@ -30,6 +30,10 @@ function compareDeviceCode(a = "", b = "") {
   return left.suffix.localeCompare(right.suffix, "zh-CN", { numeric: true });
 }
 
+function clampDay(year, month, day) {
+  return Math.min(Math.max(Number(day || 1), 1), new Date(year, month + 1, 0).getDate());
+}
+
 function includesKeyword(row, keyword) {
   if (!keyword) return true;
   return JSON.stringify(row).toLowerCase().includes(keyword);
@@ -211,9 +215,27 @@ function nextRentDate(contractDateText, fromDate = new Date()) {
   if (!contractDate) return null;
   const day = contractDate.getDate();
   const base = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
-  let candidate = new Date(base.getFullYear(), base.getMonth(), Math.min(day, new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate()));
+  let candidate = new Date(base.getFullYear(), base.getMonth(), clampDay(base.getFullYear(), base.getMonth(), day));
   if (candidate < base) {
-    candidate = new Date(base.getFullYear(), base.getMonth() + 1, Math.min(day, new Date(base.getFullYear(), base.getMonth() + 2, 0).getDate()));
+    candidate = new Date(base.getFullYear(), base.getMonth() + 1, clampDay(base.getFullYear(), base.getMonth() + 1, day));
+  }
+  return candidate;
+}
+
+function rentDayOverride(order) {
+  const source = `${order.nextRentDay || ""} ${order.rentDay || ""} ${order.note || ""}`;
+  const match = source.match(/(?:每个?月|改到|改为|变成|收租|付款|付租|交租|应收)?\s*(\d{1,2})\s*号/);
+  if (!match) return null;
+  const day = Number(match[1]);
+  return day >= 1 && day <= 31 ? day : null;
+}
+
+function nextRentDateByDay(day, fromDate = new Date()) {
+  if (!day) return null;
+  const base = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+  let candidate = new Date(base.getFullYear(), base.getMonth(), clampDay(base.getFullYear(), base.getMonth(), day));
+  if (candidate < base) {
+    candidate = new Date(base.getFullYear(), base.getMonth() + 1, clampDay(base.getFullYear(), base.getMonth() + 1, day));
   }
   return candidate;
 }
@@ -276,6 +298,16 @@ function rentalIncomeForMonth(date) {
   return data.income
     .filter((row) => sameYearMonthFromText(row.date, date) && isRentalIncome(row))
     .reduce((sum, row) => sum + Number(row.amount || 0), 0);
+}
+
+function rentalIncomeBucketsForMonth(date) {
+  return data.income
+    .filter((row) => sameYearMonthFromText(row.date, date) && isRentalIncome(row))
+    .reduce((map, row) => {
+      const key = customerKey(row.customer);
+      if (key) map.set(key, (map.get(key) || 0) + Number(row.amount || 0));
+      return map;
+    }, new Map());
 }
 
 function actualIncomeForMonth(date) {
@@ -341,12 +373,13 @@ function addMonths(date, count) {
 
 function financeMonthPlan(monthCount = 6) {
   const currentRent = currentOrders().reduce((sum, order) => sum + Number(order.monthlyRent || 0), 0);
+  const currentMonthRent = currentMonthRentSummary();
   const loans = activeLoans();
   return Array.from({ length: monthCount }, (_, offset) => {
     const month = monthStart(offset);
+    const expectedRent = offset === 0 ? currentMonthRent.expected : currentRent;
     const paidRent = offset === 0 ? rentalIncomeForMonth(month) : 0;
-    const expectedRent = currentRent;
-    const unpaidRent = Math.max(expectedRent - paidRent, 0);
+    const unpaidRent = offset === 0 ? currentMonthRent.unpaid : Math.max(expectedRent - paidRent, 0);
     const loanPayment = loans.reduce((sum, loan) => sum + loanPaymentForOffset(loan, offset), 0);
     const remainingPrincipal = loans.reduce((sum, loan) => sum + loanRemainingAfterOffset(loan, offset), 0);
     const actualIncome = offset === 0 ? actualIncomeForMonth(month) : 0;
@@ -375,7 +408,8 @@ function toneForAmount(value) {
 }
 
 function orderDueDate(order) {
-  return parseLocalDate(order.nextRentDate) || nextRentDate(order.contractDate || order.startDate);
+  const overrideDay = rentDayOverride(order);
+  return parseLocalDate(order.nextRentDate) || (overrideDay ? nextRentDateByDay(overrideDay) : nextRentDate(order.contractDate || order.startDate));
 }
 
 function endOfMonth(date) {
@@ -385,15 +419,22 @@ function endOfMonth(date) {
 function rentLedgerRows() {
   const today = todayDateOnly();
   const monthEnd = endOfMonth(today);
+  const rentIncomeByCustomer = rentalIncomeBucketsForMonth(today);
   return currentOrders().map((order) => {
     const dueDate = orderDueDate(order);
     const left = dueDate ? Math.round((dueDate - today) / 86400000) : null;
     const lastPaidDate = parseLocalDate(order.lastRentPaidDate);
-    const coversThisMonth = Boolean(dueDate && dueDate > monthEnd);
+    const rent = Number(order.monthlyRent || 0);
+    const customer = customerKey(order.customer);
+    const availablePaid = rentIncomeByCustomer.get(customer) || 0;
+    const paidAmount = Math.min(rent, availablePaid);
+    if (customer) rentIncomeByCustomer.set(customer, Math.max(availablePaid - paidAmount, 0));
+    const unpaidAmount = Math.max(rent - paidAmount, 0);
+    const coversThisMonth = paidAmount >= rent || Boolean(dueDate && dueDate > monthEnd);
     let status = coversThisMonth ? "本月已收" : "未到期";
     let tone = coversThisMonth ? "good" : "neutral";
     let priority = coversThisMonth ? 4 : 3;
-    let action = dueDate ? (coversThisMonth ? `下次 ${formatDate(dueDate)}` : `${left}天后收租`) : "缺少合同日期";
+    let action = dueDate ? (coversThisMonth ? `已确认，${addMonthsToDate(formatDate(dueDate), 1)}再收` : `${left}天后收租`) : "缺少合同日期";
 
     if (!coversThisMonth && left < 0) {
       status = "逾期未收";
@@ -416,12 +457,28 @@ function rentLedgerRows() {
       order,
       dueDate,
       lastPaidDate,
+      paidAmount,
+      unpaidAmount,
       status,
       tone,
       priority,
       action
     };
   }).sort((a, b) => a.priority - b.priority || compareDeviceCode(a.order.deviceCode, b.order.deviceCode));
+}
+
+function currentMonthRentSummary(rows = rentLedgerRows()) {
+  return rows.reduce((summary, row) => {
+    const rent = Number(row.order.monthlyRent || 0);
+    const paid = Number(row.paidAmount || 0);
+    summary.expected += rent;
+    summary.paid += paid;
+    summary.unpaid += Math.max(rent - paid, 0);
+    if (row.status === "今天应收") summary.today += Math.max(rent - paid, 0);
+    if (row.status === "逾期未收") summary.overdue += Math.max(rent - paid, 0);
+    if (row.status !== "本月已收") summary.unconfirmed += 1;
+    return summary;
+  }, { expected: 0, paid: 0, unpaid: 0, today: 0, overdue: 0, unconfirmed: 0 });
 }
 
 function splitSpecLines(text = "") {
@@ -774,16 +831,14 @@ function syncRentIncomeToOrderAndDevice(values) {
 
 function renderCommandCenter() {
   const rentRows = rentLedgerRows();
-  const currentRentTotal = rentRows.reduce((sum, row) => sum + Number(row.order.monthlyRent || 0), 0);
-  const confirmedPaid = rentRows
-    .filter((row) => row.status === "本月已收")
-    .reduce((sum, row) => sum + Number(row.order.monthlyRent || 0), 0);
+  const rentSummary = currentMonthRentSummary(rentRows);
+  const currentRentTotal = rentSummary.expected;
   const unconfirmedRows = rentRows.filter((row) => row.status !== "本月已收");
-  const monthRentPaid = currentMonthRentalIncomeTotal() || confirmedPaid;
-  const monthRentUnpaid = unconfirmedRows.reduce((sum, row) => sum + Number(row.order.monthlyRent || 0), 0);
+  const monthRentPaid = currentMonthRentalIncomeTotal();
+  const monthRentUnpaid = rentSummary.unpaid;
   const next30Rent = rentRows
     .filter((row) => row.status !== "本月已收" && withinDays(row.dueDate, 30))
-    .reduce((sum, row) => sum + Number(row.order.monthlyRent || 0), 0);
+    .reduce((sum, row) => sum + Number(row.unpaidAmount || 0), 0);
   const monthIncome = data.income
     .filter((row) => isCurrentMonthDate(row.date))
     .reduce((sum, row) => sum + Number(row.amount || 0), 0);
@@ -801,7 +856,7 @@ function renderCommandCenter() {
   const unpaidRate = currentRentTotal ? monthRentUnpaid / currentRentTotal : 0;
 
   document.querySelector("#commandMonthRentPaid").textContent = money(monthRentPaid);
-  document.querySelector("#commandMonthRentText").textContent = `财务流水本月租赁收入 / 月租盘子 ${money(currentRentTotal)}`;
+  document.querySelector("#commandMonthRentText").textContent = `财务流水租赁收入 / 当前在租盘子 ${money(currentRentTotal)}`;
   document.querySelector("#commandMonthRentUnpaid").textContent = money(monthRentUnpaid);
   document.querySelector("#commandUnpaidText").textContent = `${unconfirmedRows.length} 台未确认`;
   document.querySelector("#commandNext30Rent").textContent = money(next30Rent);
@@ -963,22 +1018,21 @@ function renderRentLedger() {
   const keyword = document.querySelector("#rentLedgerSearch").value.trim().toLowerCase();
   const allRows = rentLedgerRows();
   const rows = allRows.filter(({ order, status }) => includesKeyword({ ...order, status }, keyword));
-  const paid = allRows.filter((row) => row.status === "本月已收");
   const unpaid = allRows.filter((row) => row.status !== "本月已收");
   const idleDevices = data.devices.filter((device) => device.status === "空置");
   const todayRows = allRows.filter((row) => row.status === "今天应收");
   const sumRent = (items) => items.reduce((sum, row) => sum + Number(row.order.monthlyRent || 0), 0);
   const monthRentIncomeRows = currentMonthRentalIncomeRows();
   const monthRentIncome = monthRentIncomeRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
-  const ledgerUnpaidAmount = sumRent(unpaid);
+  const rentSummary = currentMonthRentSummary(allRows);
 
   document.querySelector("#rentingDeviceCount").textContent = allRows.length;
   document.querySelector("#rentingRentAmount").textContent = `月租合计 ${money(sumRent(allRows))}`;
   document.querySelector("#idleDeviceCount").textContent = idleDevices.length;
   document.querySelector("#idleDeviceCost").textContent = `空置成本 ${money(idleDevices.reduce((sum, device) => sum + Number(device.cost || 0), 0))}`;
-  document.querySelector("#rentPaidAmountMain").textContent = money(monthRentIncome || sumRent(paid));
-  document.querySelector("#rentPaidCountText").textContent = `${monthRentIncomeRows.length || paid.length} 笔本月租赁收入`;
-  document.querySelector("#rentUnpaidAmountMain").textContent = money(ledgerUnpaidAmount);
+  document.querySelector("#rentPaidAmountMain").textContent = money(monthRentIncome);
+  document.querySelector("#rentPaidCountText").textContent = `${monthRentIncomeRows.length} 笔本月租赁收入，当前在租抵扣 ${money(rentSummary.paid)}`;
+  document.querySelector("#rentUnpaidAmountMain").textContent = money(rentSummary.unpaid);
   document.querySelector("#rentUnpaidCountText").textContent = `${unpaid.length} 台未确认，今天应收 ${todayRows.length} 台`;
 
   if (rentLedgerFilter === "idle") {
@@ -1001,7 +1055,7 @@ function renderRentActionStrip(rows) {
   const urgentRows = rows.filter((row) => row.status === "逾期未收" || row.status === "今天应收");
   const overdueRows = rows.filter((row) => row.status === "逾期未收");
   const todayRows = rows.filter((row) => row.status === "今天应收");
-  const urgentRent = urgentRows.reduce((sum, row) => sum + Number(row.order.monthlyRent || 0), 0);
+  const urgentRent = urgentRows.reduce((sum, row) => sum + Number(row.unpaidAmount || 0), 0);
   const firstUrgent = urgentRows[0]?.order;
   return `
     <div class="rent-action-strip">
@@ -1066,6 +1120,7 @@ function renderRentedTable(targetSelector, rows) {
         <td>
           <div class="term-cell">
             <span>${ledger.dueDate ? formatDate(ledger.dueDate) : "-"}</span>
+            <span>已抵 ${money(ledger.paidAmount || 0)} / 待收 ${money(ledger.unpaidAmount || 0)}</span>
             <span>${ledger.lastPaidDate ? `最近 ${formatDate(ledger.lastPaidDate)}` : "未记录收款"}</span>
             <span>${ledger.action || ""}</span>
           </div>
@@ -1352,7 +1407,7 @@ function renderFinanceHealth() {
   document.querySelector("#financeMonthlyGap").textContent = money(monthlyGap);
   document.querySelector("#financeCoverageText").textContent = `月租 ${money(currentRent)} / 覆盖率 ${Math.round(coverage * 100)}%`;
   document.querySelector("#cashflowMonthRent").textContent = money(currentPlan.expectedRent);
-  document.querySelector("#cashflowMonthRentText").textContent = `已收 ${money(currentPlan.paidRent)} / 待收 ${money(currentPlan.unpaidRent)}`;
+  document.querySelector("#cashflowMonthRentText").textContent = `流水已收 ${money(currentPlan.paidRent)} / 当前在租待收 ${money(currentPlan.unpaidRent)}`;
   document.querySelector("#cashflowMonthLoan").textContent = money(currentPlan.loanPayment);
   document.querySelector("#cashflowMonthLoanText").textContent = `未还本金 ${money(loanRemain)}`;
   document.querySelector("#cashflowFullBalance").textContent = money(currentPlan.fullBalance);

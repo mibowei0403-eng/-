@@ -10,7 +10,7 @@
     "note": "Imported from Excel and preserved customers, bad debts, managed devices and manual non-Excel money records.",
     "cloudMergedAt": "2026-06-08T02:38:14.845Z",
     "cloudBackupSource": "cloud-current-data-before-update-20260608-103659.json",
-    "syncedAt": "2026-06-17T18:56:17",
+    "syncedAt": "2026-06-17T18:58:24",
     "rentalSyncedAt": "2026-06-15T14:51:48"
   },
   "devices": [
@@ -352,14 +352,14 @@
       "spec": "CPU：I7-12700KF 主板：华硕Z690 PRIME 内存：英睿达 铂胜 16g 4200*2 显卡:RX 6600 硬盘：英睿达 P3P m2 PCIE 4.0 散热器：利民AE360 水冷 电源：海韵 focus 850W 机箱：金河田 99A +4把风扇",
       "cost": 3900,
       "bookCost": 3900,
-      "status": "在租",
+      "status": "空置",
       "depositFree": "是",
       "rent": 450,
       "rentedMonths": 2,
       "collected": 450,
       "paybackProgress": "26.54%",
       "paidBack": "否",
-      "currentCustomer": "罗国强"
+      "currentCustomer": ""
     },
     {
       "id": "AW-2025023",
@@ -2262,7 +2262,7 @@
       "monthlyRent": 450,
       "currentMonths": 1,
       "collected": 450,
-      "status": "租赁中",
+      "status": "已归还",
       "customer": "罗国强",
       "phone": "",
       "idCard": "",

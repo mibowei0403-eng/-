@@ -273,8 +273,20 @@ function isRentalIncome(row) {
   return text.includes("租赁") || text.includes("租金") || text.includes("月租");
 }
 
+function isZhangXinIncome(row) {
+  return customerKey(row.customer) === "张欣" || String(row.summary || "").includes("张欣");
+}
+
+function isRegularIncome(row) {
+  return !isZhangXinIncome(row);
+}
+
+function isRegularRentalIncome(row) {
+  return isRentalIncome(row) && isRegularIncome(row);
+}
+
 function currentMonthRentalIncomeRows() {
-  return data.income.filter((row) => isCurrentMonthDate(row.date) && isRentalIncome(row));
+  return data.income.filter((row) => isCurrentMonthDate(row.date) && isRegularRentalIncome(row));
 }
 
 function currentMonthRentalIncomeTotal() {
@@ -296,13 +308,13 @@ function sameYearMonthFromText(text, date) {
 
 function rentalIncomeForMonth(date) {
   return data.income
-    .filter((row) => sameYearMonthFromText(row.date, date) && isRentalIncome(row))
+    .filter((row) => sameYearMonthFromText(row.date, date) && isRegularRentalIncome(row))
     .reduce((sum, row) => sum + Number(row.amount || 0), 0);
 }
 
 function rentalIncomeBucketsForMonth(date) {
   return data.income
-    .filter((row) => sameYearMonthFromText(row.date, date) && isRentalIncome(row))
+    .filter((row) => sameYearMonthFromText(row.date, date) && isRegularRentalIncome(row))
     .reduce((map, row) => {
       const key = customerKey(row.customer);
       if (key) map.set(key, (map.get(key) || 0) + Number(row.amount || 0));
@@ -312,7 +324,7 @@ function rentalIncomeBucketsForMonth(date) {
 
 function actualIncomeForMonth(date) {
   return data.income
-    .filter((row) => sameYearMonthFromText(row.date, date))
+    .filter((row) => sameYearMonthFromText(row.date, date) && isRegularIncome(row))
     .reduce((sum, row) => sum + Number(row.amount || 0), 0);
 }
 
@@ -840,7 +852,7 @@ function renderCommandCenter() {
     .filter((row) => row.status !== "本月已收" && withinDays(row.dueDate, 30))
     .reduce((sum, row) => sum + Number(row.unpaidAmount || 0), 0);
   const monthIncome = data.income
-    .filter((row) => isCurrentMonthDate(row.date))
+    .filter((row) => isCurrentMonthDate(row.date) && isRegularIncome(row))
     .reduce((sum, row) => sum + Number(row.amount || 0), 0);
   const monthExpense = data.expense
     .filter((row) => isCurrentMonthDate(row.date))
@@ -856,7 +868,7 @@ function renderCommandCenter() {
   const unpaidRate = currentRentTotal ? monthRentUnpaid / currentRentTotal : 0;
 
   document.querySelector("#commandMonthRentPaid").textContent = money(monthRentPaid);
-  document.querySelector("#commandMonthRentText").textContent = `财务流水租赁收入 / 当前在租盘子 ${money(currentRentTotal)}`;
+  document.querySelector("#commandMonthRentText").textContent = `常规租赁收入 / 当前在租盘子 ${money(currentRentTotal)}`;
   document.querySelector("#commandMonthRentUnpaid").textContent = money(monthRentUnpaid);
   document.querySelector("#commandUnpaidText").textContent = `${unconfirmedRows.length} 台未确认`;
   document.querySelector("#commandNext30Rent").textContent = money(next30Rent);
@@ -1031,7 +1043,7 @@ function renderRentLedger() {
   document.querySelector("#idleDeviceCount").textContent = idleDevices.length;
   document.querySelector("#idleDeviceCost").textContent = `空置成本 ${money(idleDevices.reduce((sum, device) => sum + Number(device.cost || 0), 0))}`;
   document.querySelector("#rentPaidAmountMain").textContent = money(monthRentIncome);
-  document.querySelector("#rentPaidCountText").textContent = `${monthRentIncomeRows.length} 笔本月租赁收入，当前在租抵扣 ${money(rentSummary.paid)}`;
+  document.querySelector("#rentPaidCountText").textContent = `${monthRentIncomeRows.length} 笔常规租赁收入，当前在租抵扣 ${money(rentSummary.paid)}`;
   document.querySelector("#rentUnpaidAmountMain").textContent = money(rentSummary.unpaid);
   document.querySelector("#rentUnpaidCountText").textContent = `${unpaid.length} 台未确认，今天应收 ${todayRows.length} 台`;
 
@@ -1407,7 +1419,7 @@ function renderFinanceHealth() {
   document.querySelector("#financeMonthlyGap").textContent = money(monthlyGap);
   document.querySelector("#financeCoverageText").textContent = `月租 ${money(currentRent)} / 覆盖率 ${Math.round(coverage * 100)}%`;
   document.querySelector("#cashflowMonthRent").textContent = money(currentPlan.expectedRent);
-  document.querySelector("#cashflowMonthRentText").textContent = `流水已收 ${money(currentPlan.paidRent)} / 当前在租待收 ${money(currentPlan.unpaidRent)}`;
+  document.querySelector("#cashflowMonthRentText").textContent = `常规已收 ${money(currentPlan.paidRent)} / 当前在租待收 ${money(currentPlan.unpaidRent)}`;
   document.querySelector("#cashflowMonthLoan").textContent = money(currentPlan.loanPayment);
   document.querySelector("#cashflowMonthLoanText").textContent = `未还本金 ${money(loanRemain)}`;
   document.querySelector("#cashflowFullBalance").textContent = money(currentPlan.fullBalance);

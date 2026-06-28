@@ -215,15 +215,18 @@ def parse_loans():
         if clean(row[1]) == "" and clean(row[2]) == "" and clean(row[3]) == "":
             continue
         principal = number(row[3])
-        remaining = number(row[4])
-        repaid = number(row[5])
-        interest = number(row[6])
+        has_status_column = text(row[4]) in {"已还清", "未还清"} or (text(row[4]) and not number(row[4]))
+        status = text(row[4]) if has_status_column else ""
+        summary_offset = 1 if has_status_column else 0
+        remaining = number(row[4 + summary_offset])
+        repaid = number(row[5 + summary_offset])
+        interest = number(row[6 + summary_offset])
         if not principal and not remaining and not repaid:
             continue
 
         payment_values = []
         interest_values = []
-        for col in range(7, min(len(row), 31), 2):
+        for col in range(7 + summary_offset, min(len(row), 31 + summary_offset), 2):
             payment = number(row[col])
             intr = number(row[col + 1]) if col + 1 < len(row) else 0
             if payment:
@@ -266,6 +269,7 @@ def parse_loans():
             "category": category,
             "name": name,
             "principal": principal,
+            "status": status,
             "remainingPrincipal": remaining,
             "repaidPrincipal": repaid,
             "paidInterest": interest or round(sum(interest_values), 2),
